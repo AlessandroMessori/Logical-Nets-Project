@@ -32,7 +32,9 @@ signal next_state, current_state: state_type;
 signal check : std_logic;
 signal i : std_logic_vector(15 downto 0);
 signal addwz : unsigned(7 downto 0);
-signal sum : unsigned(7 downto 0);
+signal sub : unsigned(7 downto 0);
+signal wzNumber: std_logic_vector(2 downto 0);
+signal wzOffset: std_logic_vector(3 downto 0);
 begin
 
 
@@ -59,7 +61,7 @@ begin
                 o_we <= '0';
                 o_data <= "00000000";
                 i <=  "0000000000001000"; -- wz RAM address
-                sum <= "00000000";
+                sub <=  "00000000";
                 o_address <= std_logic_vector(i);
                 if i_start = '1' then
                     next_state <= S1;
@@ -79,10 +81,9 @@ begin
                
                 i <= std_logic_vector(i+1);
                 
-                sum <= unsigned(i_data);
-                sum <=  unsigned(sum+3);
+                sub <= addwz - unsigned(i_data);
                 
-                if sum >= addwz and addwz >= unsigned(i_data) then
+                if sub > -4 and sub < 4 then
                     check <= '1';
                 end if;
      
@@ -107,9 +108,22 @@ begin
             -- Address in Working Zone
             when S4 =>
                 o_we <= '1';
-                -- Todo encode in binary wz number,3 bits
-                -- Todo encode in onehot wz offset,4 bits
-                o_data <= '1' & "0000" & "000";
+                -- encode in binary wz number,3 bits
+                i <= std_logic_vector(i-1);
+                wzNumber <= i(2 downto 0);
+                
+                -- encode in onehot wz offset,4 bits
+                if sub(1 downto 0) = "00" then
+                    wzOffset <= "0000";
+               elsif sub(1 downto 0) = "01" then
+                    wzOffset <= "0010";
+               elsif sub(1 downto 0) = "10" then
+                    wzOffset <= "0100";
+               else  
+                    wzOffset <= "1000";
+                end if;
+                
+                o_data <= '1' & wzNumber & wzOffset;
                 o_address <= "0000000000001001";
                 next_state <= S5;
                 
