@@ -27,10 +27,11 @@ Port (
 end project_reti_logiche;
 
 architecture Behavioral of project_reti_logiche  is
-type state_type is (S0,S1,S2,S3);
+type state_type is (S0,S1,S2,S3,S4,S5);
 signal next_state, current_state: state_type;
 signal check : std_logic;
 signal i : std_logic_vector(15 downto 0);
+signal addwz : std_logic_vector(7 downto 0);
 begin
 
     --current_state <= S0;
@@ -57,42 +58,63 @@ begin
                 o_done <= '0';
                 o_en <= '1';
                 o_we <= '0';
-                i <=  "0000000000000000";
-                o_address <= std_logic_vector(i);
                 o_data <= "00000000";
+                i <=  "0000000000001001";
+                o_address <= std_logic_vector(i);
                 if i_start = '1' then
                     next_state <= S1;
                  end if;
-            -- Set Initial Values
+                 
+            -- Read WzAddr Value     
+            when S1 =>
+                addwz <= std_logic_vector(i_data);
+                i <=  "0000000000000000";
+                o_address <= std_logic_vector(i);
+                next_state <= S2;
+                
               
              -- Check if Address is in Working Zone 
-            when S1 =>
+            when S2 =>
                 o_address <= std_logic_vector(unsigned(i)+1);
                 i <= i+1;
-                --o_data <= "00000001";
+                
+                -- Todo Check if address is in current wz
+                -- sub <= addwz - i_data
+                -- if sub < 4 then check = 1 else check = 0
+     
                 if check = '1' then 
-                    next_state <= S3;
+                    next_state <= S4;
                 elsif unsigned(i) < 8 then 
-                    next_state <= S1;
-                else 
                     next_state <= S2;
+                else 
+                    next_state <= S3;
                 end if;
               
             -- Address not in Working Zone  
-            when S2 =>
-                o_done <= '1';
+            when S3 =>
                 o_we <= '1';
-                --o_data <= "00000010";
+                o_data <=  addwz;
                 o_address <= "0000000000001001";
-                next_state <= S2;
+                next_state <= S5;
             
             -- Address in Working Zone
-            when S3 =>
-                o_done <= '1';
+            when S4 =>
                 o_we <= '1';
+                -- Todo encode in binary wz number,3 bits
+                -- Todo encode in onehot wz offset,4 bits
+                o_data <= '1' & "0000" & "000";
                 o_address <= "0000000000001001";
-                --o_data <= "00000011";
-                next_state <= S3;
+                next_state <= S5;
+                
+            -- Final State    
+            when S5 => 
+                o_done <= '1';
+                o_we <= '0';
+                o_en <= '0';
+                o_address <= "0000000000000000";
+                next_state <= S5;
+                
+            --Todo add end state
         end case;
      end process;
     
