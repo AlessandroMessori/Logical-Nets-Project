@@ -27,7 +27,7 @@ Port (
 end project_reti_logiche;
 
 architecture Behavioral of project_reti_logiche  is
-type state_type is (S0,S1,S2,S3,S4,S5);
+type state_type is (S0,S1,S2,S3,S4,S5,S6);
 signal next_state, current_state: state_type;
 signal check : std_logic;
 signal i : std_logic_vector(15 downto 0);
@@ -126,7 +126,16 @@ begin
                 o_we <= '0';
                 o_en <= '0';
                 o_address <= "0000000000000000";
-                next_state <= S5;
+                next_state <= S6;
+                
+            when S6 => 
+                if (i_start = '0') then
+                    o_done <= '0';
+                    next_state <= S0;
+                else 
+                    next_state <= S6;
+                 end if;
+                
                 
 
         end case;
