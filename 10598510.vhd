@@ -31,10 +31,9 @@ type state_type is (S0,S1,S2,S3,S4,S5);
 signal next_state, current_state: state_type;
 signal check : std_logic;
 signal i : std_logic_vector(15 downto 0);
-signal addwz : std_logic_vector(7 downto 0);
+signal addwz : unsigned(7 downto 0);
+signal sum : unsigned(7 downto 0);
 begin
-
-    --current_state <= S0;
 
 
     state_reg: process(i_clk, i_rst)
@@ -60,6 +59,7 @@ begin
                 o_we <= '0';
                 o_data <= "00000000";
                 i <=  "0000000000001000"; -- wz RAM address
+                sum <= "00000000";
                 o_address <= std_logic_vector(i);
                 if i_start = '1' then
                     next_state <= S1;
@@ -67,20 +67,24 @@ begin
                  
             -- Read WzAddr Value     
             when S1 =>
-                addwz <= std_logic_vector(i_data);
+                addwz <= unsigned(i_data);
                 i <=  "0000000000000000";
-                o_address <= std_logic_vector(i);
+                o_address <= "0000000000000000";
                 next_state <= S2;
                 
               
              -- Check if Address is in Working Zone 
             when S2 =>
-                o_address <= std_logic_vector(unsigned(i)+1);
-                i <= i+1;
                 
-                -- Todo Check if address is in current wz
-                -- sub <= addwz - i_data
-                -- if sub < 4 then check = 1 else check = 0
+               
+                i <= std_logic_vector(i+1);
+                
+                sum <= unsigned(i_data);
+                sum <=  unsigned(sum+3);
+                
+                if sum >= addwz and addwz >= unsigned(i_data) then
+                    check <= '1';
+                end if;
      
                 if check = '1' then 
                     next_state <= S4;
@@ -89,11 +93,14 @@ begin
                 else 
                     next_state <= S3;
                 end if;
+                
+                o_address <= std_logic_vector(unsigned(i));
+                    
               
             -- Address not in Working Zone  
             when S3 =>
                 o_we <= '1';
-                o_data <=  addwz;
+                o_data <=  std_logic_vector(addwz);
                 o_address <= "0000000000001001";
                 next_state <= S5;
             
