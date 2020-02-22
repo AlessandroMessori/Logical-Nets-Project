@@ -32,7 +32,7 @@ signal next_state, current_state: state_type;
 signal check : std_logic;
 signal i : std_logic_vector(15 downto 0);
 signal addwz : unsigned(7 downto 0);
-signal sub : unsigned(7 downto 0);
+signal sub : std_logic_vector(7 downto 0);
 signal wzNumber: std_logic_vector(2 downto 0);
 signal wzOffset: std_logic_vector(3 downto 0);
 begin
@@ -78,19 +78,13 @@ begin
              -- Check if Address is in Working Zone 
             when S2 =>
                 
-               
-                i <= std_logic_vector(i+1);
-                
-                sub <= addwz - unsigned(i_data);
-                
-                if sub > -4 and sub < 4 then
-                    check <= '1';
-                end if;
-     
-                if check = '1' then 
+                if unsigned(i_data+3) > addwz and addwz > unsigned(i_data) then
+                    sub <= std_logic_vector(i_data+3);
+                    i <= std_logic_vector(i-1);
                     next_state <= S4;
                 elsif unsigned(i) < 8 then 
                     next_state <= S2;
+                    i <= std_logic_vector(i+1);
                 else 
                     next_state <= S3;
                 end if;
@@ -109,18 +103,17 @@ begin
             when S4 =>
                 o_we <= '1';
                 -- encode in binary wz number,3 bits
-                i <= std_logic_vector(i-1);
                 wzNumber <= i(2 downto 0);
                 
                 -- encode in onehot wz offset,4 bits
-                if sub(1 downto 0) = "00" then
-                    wzOffset <= "0000";
-               elsif sub(1 downto 0) = "01" then
-                    wzOffset <= "0010";
-               elsif sub(1 downto 0) = "10" then
-                    wzOffset <= "0100";
-               else  
+                if unsigned(sub) = addwz then
                     wzOffset <= "1000";
+                elsif unsigned(sub)-1 = addwz then
+                    wzOffset <= "0100";
+                elsif unsigned(sub)-2 = addwz then
+                    wzOffset <= "0010";
+                elsif unsigned(sub)-3 = addwz then  
+                    wzOffset <= "0001";
                 end if;
                 
                 o_data <= '1' & wzNumber & wzOffset;
@@ -135,7 +128,7 @@ begin
                 o_address <= "0000000000000000";
                 next_state <= S5;
                 
-            --Todo add end state
+
         end case;
      end process;
     
