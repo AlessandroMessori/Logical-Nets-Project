@@ -59,7 +59,7 @@ begin
                 o_en <= '1';
                 o_we <= '0';
                 o_data <= "00000000";
-                i <=  "0000000000001001";
+                i <=  "0000000000001000"; -- wz RAM address
                 o_address <= std_logic_vector(i);
                 if i_start = '1' then
                     next_state <= S1;
