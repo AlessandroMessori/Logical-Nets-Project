@@ -78,7 +78,7 @@ begin
              -- Check if Address is in Working Zone 
             when S2 =>
                 
-                if unsigned(i_data+3) > addwz and addwz > unsigned(i_data) then
+                if unsigned(i_data+3) >= addwz and addwz > unsigned(i_data) then
                     sub <= std_logic_vector(i_data+3);
                     i <= std_logic_vector(i-1);
                     next_state <= S4;
