@@ -1,0 +1,12 @@
+Test Benching
+ - Edge Working Zones ( RAM[0] and RAM[8] )
+ - Edge Input Values (wz and addwz)
+ - Input Values at WZ Edges
+ - Mid Execution Reset  
+
+Behavioral 
+ - Greater Equal Issue
+
+Post Synthesis
+ - Failed Test
+ - Inferring Latches

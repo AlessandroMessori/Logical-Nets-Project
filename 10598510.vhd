@@ -14,27 +14,21 @@ use IEEE.NUMERIC_STD.all;
 
 entity project_reti_logiche is
 Port (
-    i_clk : in std_logic;
-    i_start : in std_logic;
-    i_rst : in std_logic;
-    i_data : in std_logic_vector(7 downto 0);
-    o_address : out std_logic_vector(15 downto 0);
-    o_done : out std_logic;
-    o_en : out std_logic;
-    o_we : out std_logic;
-    o_data : out std_logic_vector(7 downto 0)
+    i_clk     :     in std_logic;
+    i_start   :     in std_logic;
+    i_rst     :     in std_logic;
+    i_data    :     in std_logic_vector(7 downto 0);
+    o_address :     out std_logic_vector(15 downto 0);
+    o_done    :     out std_logic;
+    o_en      :     out std_logic;
+    o_we      :     out std_logic;
+    o_data    :     out std_logic_vector(7 downto 0)
 );
 end project_reti_logiche;
 
 architecture Behavioral of project_reti_logiche  is
 type state_type is (S0,S1,S2,S3,S4,S5,S6);
 signal next_state, current_state: state_type;
-signal check : std_logic;
-signal i : std_logic_vector(15 downto 0);
-signal addwz : unsigned(7 downto 0);
-signal sub : std_logic_vector(7 downto 0);
-signal wzNumber: std_logic_vector(2 downto 0);
-signal wzOffset: std_logic_vector(3 downto 0);
 begin
 
 
@@ -50,46 +44,52 @@ begin
     
     
     lambda: process(current_state,i_start,i_data)
+    variable i        :     unsigned(15 downto 0);
+    variable addwz    :     unsigned(7 downto 0);
+    variable wzNumber :     std_logic_vector(2 downto 0);
+    variable wzOffset :     std_logic_vector(3 downto 0);
     begin
         case current_state is
             
             -- Reset State 
             when S0 =>
-                check <= '0';
                 o_done <= '0';
                 o_en <= '1';
                 o_we <= '0';
                 o_data <= "00000000";
-                i <=  "0000000000001000"; -- wz RAM address
-                sub <=  "00000000";
-                o_address <= std_logic_vector(i);
+                i := "0000000000001000";
+                addwz := "00000000";
+                wzNumber := "000";
+                wzOffset := "0000";
+                
+                
+                o_address <= "0000000000001000";  -- wz RAM address
                 if i_start = '1' then
                     next_state <= S1;
                  end if;
                  
             -- Read WzAddr Value     
             when S1 =>
-                addwz <= unsigned(i_data);
-                i <=  "0000000000000000";
+                addwz := unsigned(i_data);
+                i :=  "0000000000000000";
                 o_address <= "0000000000000000";
                 next_state <= S2;
                 
               
              -- Check if Address is in Working Zone 
             when S2 =>
-                
-                if unsigned(i_data+3) >= addwz and addwz > unsigned(i_data) then
-                    sub <= std_logic_vector(i_data+3);
-                    i <= std_logic_vector(i-1);
-                    next_state <= S4;
-                elsif unsigned(i) < 8 then 
-                    next_state <= S2;
-                    i <= std_logic_vector(i+1);
-                else 
+                report "INDEX " & integer'image(to_integer(unsigned(i)));
+                report "ADDWZ " & integer'image(to_integer(unsigned(addwz)));
+                report "IDATA " & integer'image(to_integer(unsigned(i_data)));
+                if i >= 8 then 
                     next_state <= S3;
+                elsif addwz >= unsigned(i_data)  and addwz <= (unsigned(i_data)+3) then --address is in current wz
+                    next_state <= S4;
+                else
+                    o_address <= std_logic_vector(i+1);
+                    i := i+1;
+                    next_state <= current_state;
                 end if;
-                
-                o_address <= std_logic_vector(unsigned(i));
                     
               
             -- Address not in Working Zone  
@@ -103,17 +103,17 @@ begin
             when S4 =>
                 o_we <= '1';
                 -- encode in binary wz number,3 bits
-                wzNumber <= i(2 downto 0);
+                wzNumber := std_logic_vector(i(2 downto 0));
                 
                 -- encode in onehot wz offset,4 bits
-                if unsigned(sub) = addwz then
-                    wzOffset <= "1000";
-                elsif unsigned(sub)-1 = addwz then
-                    wzOffset <= "0100";
-                elsif unsigned(sub)-2 = addwz then
-                    wzOffset <= "0010";
-                elsif unsigned(sub)-3 = addwz then  
-                    wzOffset <= "0001";
+                if unsigned(i_data+3) = addwz then
+                    wzOffset := "1000";
+                elsif unsigned(i_data+3) = addwz + 1 then
+                    wzOffset := "0100";
+                elsif unsigned(i_data+3) = addwz + 2 then
+                    wzOffset := "0010";
+                elsif unsigned(i_data+3) = addwz + 3 then  
+                    wzOffset := "0001";
                 end if;
                 
                 o_data <= '1' & wzNumber & wzOffset;
