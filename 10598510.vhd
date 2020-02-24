@@ -72,22 +72,19 @@ begin
             when S1 =>
                 addwz := unsigned(i_data);
                 i :=  "0000000000000000";
-                o_address <= "0000000000000000";
+                o_address <= std_logic_vector(i);
                 next_state <= S2;
                 
               
              -- Check if Address is in Working Zone 
             when S2 =>
-                report "INDEX " & integer'image(to_integer(unsigned(i)));
-                report "ADDWZ " & integer'image(to_integer(unsigned(addwz)));
-                report "IDATA " & integer'image(to_integer(unsigned(i_data)));
                 if i >= 8 then 
                     next_state <= S3;
                 elsif addwz >= unsigned(i_data)  and addwz <= (unsigned(i_data)+3) then --address is in current wz
                     next_state <= S4;
                 else
-                    o_address <= std_logic_vector(i+1);
                     i := i+1;
+                    o_address <= std_logic_vector(i);
                     next_state <= current_state;
                 end if;
                     
