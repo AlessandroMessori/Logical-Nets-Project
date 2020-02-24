@@ -6,5 +6,4 @@ Test Benching
  - Mid Execution Reset --> OK  
 
 Post Synthesis
- - Failed Test
  - Inferring Latches
