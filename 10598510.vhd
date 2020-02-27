@@ -78,6 +78,8 @@ begin
             when S1 =>
                 addwz_next <= unsigned(i_data);
                 i_next <=  "0000000000000000";
+                o_en <= '1';
+                o_we <= '0';
                 o_address <= "0000000000000000";
                 next_state <= S2;
                 
@@ -89,7 +91,6 @@ begin
                     next_state <= S3;
                     o_address <= std_logic_vector(i);
                 elsif addwz >= unsigned(i_data)  and addwz <= (unsigned(i_data)+3) then --address is in current wz
-                     --wzNumber := std_logic_vector(i(2 downto 0));
                      o_address <= std_logic_vector(i);
                      next_state <= S4;
                 else
@@ -111,7 +112,12 @@ begin
             when S4 =>
                 o_we <= '1';
                 -- encode in binary wz number,3 bits
-                 cnt := unsigned(i)- 1;
+                if unsigned(i) = "0000000000000000" then
+                    cnt := unsigned(i);
+                else
+                    cnt := unsigned(i)- 1;
+                 end if;
+                 
                  wzNumber := std_logic_vector(cnt(2 downto 0));
                 -- encode in onehot wz offset,4 bits
                 if unsigned(i_data+3) = addwz then
