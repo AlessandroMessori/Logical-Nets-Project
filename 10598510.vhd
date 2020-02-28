@@ -48,8 +48,8 @@ begin
     
     
     lambda: process(i,addwz,current_state,i_start,i_data)
-    variable wzNumber,wzNumber_next :     std_logic_vector(2 downto 0);
-    variable wzOffset,wzOffset_next :     std_logic_vector(3 downto 0);
+    variable wzNumber :     std_logic_vector(2 downto 0);
+    variable wzOffset :     std_logic_vector(3 downto 0);
     variable cnt: unsigned(15 downto 0);
     begin
 
@@ -62,14 +62,17 @@ begin
             
                  if i_start = '1' then
                     next_state <= S1;
+                 else 
+                    next_state <= S0;
                  end if;
+                 
             
                 o_done <= '0';
                 o_en <= '1';
                 o_we <= '0';
                 o_data <= "00000000";
                 i_next <= "0000000000001000";
-                
+                addwz_next <= "00000000";
                 
                 o_address <= "0000000000001000";  -- wz RAM address
 
@@ -80,7 +83,9 @@ begin
                 i_next <=  "0000000000000000";
                 o_en <= '1';
                 o_we <= '0';
+                o_done <= '0';
                 o_address <= "0000000000000000";
+                o_data <= "00000000";
                 next_state <= S2;
                 
               
@@ -90,23 +95,33 @@ begin
                 if i >= 8 then 
                     next_state <= S3;
                     o_address <= std_logic_vector(i);
+                    --i_next <= i;
                 elsif addwz >= unsigned(i_data)  and addwz <= (unsigned(i_data)+3) then --address is in current wz
                      o_address <= std_logic_vector(i);
+                     --i_next <= i;
                      next_state <= S4;
                 else
                     i_next <= i+1;
                     o_address <= std_logic_vector(i+1);
                     next_state <= current_state;
                 end if;
+                o_done <= '0';
+                o_en <= '1';
+                o_we <= '0';
+                o_data <= "00000000";
+                addwz_next <= addwz;
                     
               
             -- Address not in Working Zone  
             when S3 =>
+                o_en <= '1';
                 o_we <= '1';
+                o_done <= '0';
                 o_data <=  std_logic_vector(addwz);
                 o_address <= "0000000000001001";
                 next_state <= S5;
                 i_next <= "0000000000000000";
+                addwz_next <= addwz;
             
             -- Address in Working Zone
             when S4 =>
@@ -116,7 +131,7 @@ begin
                     cnt := unsigned(i);
                 else
                     cnt := unsigned(i)- 1;
-                 end if;
+                end if;
                  
                  wzNumber := std_logic_vector(cnt(2 downto 0));
                 -- encode in onehot wz offset,4 bits
@@ -128,11 +143,16 @@ begin
                     wzOffset := "0010";
                 elsif unsigned(i_data+3) = addwz + 3 then  
                     wzOffset := "0001";
+                else 
+                    wzOffset := "0000"; 
                 end if;
                 
                 o_data <= '1' & wzNumber & wzOffset;
+                o_done <= '0';
+                o_en <= '1';
                 o_address <= "0000000000001001";
                 i_next <=  "0000000000000000";
+                addwz_next <= addwz;
                 next_state <= S5;
                 
             -- Final State    
@@ -140,8 +160,11 @@ begin
                 o_done <= '1';
                 o_we <= '0';
                 o_en <= '0';
+                o_done <= '0';
                 o_address <= "0000000000000000";
+                o_data <= "00000000";
                 i_next <=  "0000000000000000";
+                addwz_next <= addwz;
                 next_state <= S6;
                 
             when S6 => 
@@ -149,10 +172,15 @@ begin
                     o_done <= '0';
                     next_state <= S0;
                 else 
+                    o_done <= '1';
                     next_state <= S6;
-                 end if;
+                end if;
+                 o_en <= '0';
+                 o_we <= '0';
                  i_next <= "0000000000000000";
                  o_address <= std_logic_vector(i+1);
+                 o_data <= "00000000";
+                 addwz_next <= addwz;
 
                 
                 

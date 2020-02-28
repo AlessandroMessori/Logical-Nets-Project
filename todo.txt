@@ -9,4 +9,4 @@ Test Benching
  - Stress Test 300K --> OK
 
 Post Synthesis
- - Inferring Latches
+ - Inferring Latches --> OK 
